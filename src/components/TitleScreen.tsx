@@ -1,27 +1,30 @@
 "use client";
 
+const BASE_PATH = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 interface TitleScreenProps {
   onStart: () => void;
 }
 
 export default function TitleScreen({ onStart }: TitleScreenProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-[100dvh] bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-4">
-      <h1 className="text-5xl sm:text-6xl font-bold mb-4 animate-bounce-slow salmon-title">
-        サモドロ
-      </h1>
-      <p className="text-lg sm:text-xl mb-2 text-orange-300">サーモンパズルバトル</p>
-      <p className="text-xs sm:text-sm mb-8 text-[#8B6F6F] opacity-70">リアルなサーモンで遊ぶぷよぷよ風パズル</p>
+    <div className="flex flex-col items-center min-h-[100dvh] bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-3 sm:p-4 overflow-y-auto">
+      {/* バナー画像 */}
+      <img
+        src={`${BASE_PATH}/images/banner.jpg`}
+        alt="サモドロ — 究極の鮭を4つ繋げて消せ！大連鎖パズルバトル！"
+        className="w-full max-w-lg rounded-2xl shadow-xl mt-4 sm:mt-6"
+      />
 
       <button
         onClick={onStart}
-        className="px-12 py-4 bg-[#E74C3C] hover:bg-[#C0392B] text-white text-2xl font-bold rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95"
+        className="mt-6 px-12 py-4 bg-[#E74C3C] hover:bg-[#C0392B] text-white text-2xl font-bold rounded-xl shadow-lg transition-all hover:scale-105 active:scale-95"
       >
         スタート
       </button>
 
       {/* 遊び方 */}
-      <div className="mt-8 bg-[#E8C4B8]/30 rounded-xl p-5 max-w-md w-full">
+      <div className="mt-6 bg-[#E8C4B8]/30 rounded-xl p-5 max-w-md w-full">
         <p className="text-center text-sm font-bold text-orange-300 mb-3">遊び方</p>
         <div className="text-sm text-[#8B6F6F] space-y-1 mb-4 px-2">
           <p>同じ種類のサーモンを <span className="text-[#E74C3C] font-bold">4つ以上</span> つなげると消えます</p>
