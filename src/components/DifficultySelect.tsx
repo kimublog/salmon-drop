@@ -10,7 +10,7 @@ interface DifficultySelectProps {
 
 export default function DifficultySelect({ onSelect, onBack }: DifficultySelectProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-4">
+    <div className="flex flex-col items-center min-h-[100dvh] bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-4 py-8 overflow-y-auto">
       <h2 className="text-3xl font-bold mb-8">難易度を選択</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl w-full">
