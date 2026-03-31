@@ -35,7 +35,7 @@ export default function Home() {
   // ローディング
   if (!imagesReady) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#0D3B66] to-[#1B4F72] text-white">
+      <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C]">
         <p className="text-xl mb-4">サーモンを準備中...</p>
         <div className="w-64 h-3 bg-white/20 rounded-full overflow-hidden">
           <div

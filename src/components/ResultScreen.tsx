@@ -31,10 +31,10 @@ export default function ResultScreen({
     localStorage.setItem(highScoreKey, String(score.score));
   }
 
-  const shareText = `Salmon Dropで${difficultyName}モード ${score.score.toLocaleString()}点を獲得！サーモン力は「${title}」級！ #SalmonDrop #サーモンパズル`;
+  const shareText = `サモドロで${difficultyName}モード ${score.score.toLocaleString()}点を獲得！サーモン力は「${title}」級！ #サモドロ #サーモンパズル`;
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#0D3B66] to-[#1B4F72] text-white p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-4">
       <h2 className="text-4xl font-bold mb-2">GAME OVER</h2>
 
       {isNewRecord && (
@@ -43,16 +43,16 @@ export default function ResultScreen({
         </div>
       )}
 
-      <div className="bg-white/10 rounded-2xl p-8 text-center mb-8 min-w-[300px]">
-        <p className="text-sm text-blue-300 mb-1">{difficultyName}</p>
+      <div className="bg-[#E8C4B8]/30 rounded-2xl p-8 text-center mb-8 min-w-[300px]">
+        <p className="text-sm text-[#A08080] mb-1">{difficultyName}</p>
         <p className="text-5xl font-bold text-orange-300 mb-4">
           {score.score.toLocaleString()}
         </p>
-        <p className="text-sm text-blue-300 mb-1">最大連鎖</p>
+        <p className="text-sm text-[#A08080] mb-1">最大連鎖</p>
         <p className="text-2xl font-bold mb-4">{score.maxChain}連鎖</p>
 
-        <div className="border-t border-white/20 pt-4 mt-4">
-          <p className="text-sm text-blue-300 mb-1">サーモン力</p>
+        <div className="border-t border-[#E8C4B8]/40 pt-4 mt-4">
+          <p className="text-sm text-[#A08080] mb-1">サーモン力</p>
           <p className="text-2xl font-bold text-yellow-300">{title}</p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export default function ResultScreen({
         </button>
         <button
           onClick={onSelectDifficulty}
-          className="px-8 py-3 bg-white/20 hover:bg-white/30 rounded-xl text-lg font-bold transition-all hover:scale-105"
+          className="px-8 py-3 bg-[#E8C4B8]/40 hover:bg-white/30 rounded-xl text-lg font-bold transition-all hover:scale-105"
         >
           難易度選択へ
         </button>
@@ -78,7 +78,7 @@ export default function ResultScreen({
           href={`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`}
           target="_blank"
           rel="noopener noreferrer"
-          className="px-4 py-2 bg-black/40 rounded-lg text-sm hover:bg-black/60 transition-colors"
+          className="px-4 py-2 bg-[#5C3D3D]/30 rounded-lg text-sm hover:bg-black/60 transition-colors"
         >
           Xでシェア
         </a>
@@ -86,7 +86,7 @@ export default function ResultScreen({
           onClick={() => {
             navigator.clipboard.writeText(shareText);
           }}
-          className="px-4 py-2 bg-black/40 rounded-lg text-sm hover:bg-black/60 transition-colors"
+          className="px-4 py-2 bg-[#5C3D3D]/30 rounded-lg text-sm hover:bg-black/60 transition-colors"
         >
           コピー
         </button>

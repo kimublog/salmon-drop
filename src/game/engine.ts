@@ -1,12 +1,19 @@
-import { GameState, Grid, FallingPiece, GameScore } from "@/types/game";
+import { GameState, Grid, FallingPiece, GameScore, Position } from "@/types/game";
 import { SalmonId } from "@/types/salmon";
 import { Difficulty } from "@/types/difficulty";
-import { SALMON_TYPES, GRID_COLS } from "@/constants/salmonTypes";
+import { SALMON_TYPES, GRID_COLS, GRID_ROWS } from "@/constants/salmonTypes";
 import { DIFFICULTIES } from "@/constants/difficulties";
 import { createGrid, setCell, applyGravity, isEmpty } from "./grid";
 import { spawnPiece, movePiece, rotatePiece, dropOne, hardDrop, getSubPos, getGhostPosition } from "./piece";
-import { resolveChains } from "./chain";
-import { render, preloadImages, BOARD_WIDTH, BOARD_HEIGHT } from "./renderer";
+import { findMatches, removeMatches } from "./collision";
+import { getBaseScore, getChainMultiplier } from "@/constants/scoring";
+import {
+  render, preloadImages, spawnParticles, showChainText,
+  addVanishingCells, hasVanishingCells,
+  addFallingCells, hasFallingCells,
+  resetSmoothPos,
+  BOARD_WIDTH, BOARD_HEIGHT,
+} from "./renderer";
 
 export interface GameEngine {
   start: (difficultyId: string) => void;
@@ -25,6 +32,15 @@ export interface GameEngine {
 
 export type InputAction = "left" | "right" | "rotate" | "soft_drop" | "hard_drop";
 
+/**
+ * アニメーションフェーズ:
+ * - "idle": 通常操作中
+ * - "vanishing": 消滅アニメーション再生中
+ * - "falling": 重力落下アニメーション再生中
+ * - "checking": 次のマッチを探す
+ */
+type AnimPhase = "idle" | "vanishing" | "falling" | "checking";
+
 export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
   const ctx = canvas.getContext("2d")!;
   canvas.width = BOARD_WIDTH;
@@ -40,9 +56,13 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
 
   let dropInterval = 800;
   let lastDropTime = 0;
-  let gameStartTime = 0;
   let lastSpeedUpTime = 0;
   let animationId = 0;
+
+  // アニメーション状態
+  let animPhase: AnimPhase = "idle";
+  let currentChainCount = 0;
+  let pendingParticles: { col: number; row: number; salmonId: SalmonId }[] = [];
 
   let onStateChange: ((s: GameState) => void) | undefined;
   let onScoreChange: ((s: GameScore) => void) | undefined;
@@ -58,61 +78,177 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
     onScoreChange?.(score);
   }
 
-  /** ピースをグリッドに固定 */
+  /** 連鎖チェック：マッチがあれば消滅アニメ開始、なければ次のピースへ */
+  function checkAndStartChain(): void {
+    const matches = findMatches(grid);
+    if (matches.length === 0) {
+      // 連鎖終了 → 次のピースへ
+      if (currentChainCount > 0) {
+        onChain?.(currentChainCount);
+      }
+      currentChainCount = 0;
+
+      // ゲームオーバー判定
+      if (!isEmpty(grid, 2, 0) || !isEmpty(grid, 3, 0)) {
+        setState("gameover");
+        return;
+      }
+
+      // 次のピース
+      currentPiece = nextPiece;
+      nextPiece = spawnPiece(activeSalmonIds);
+      if (currentPiece) {
+        resetSmoothPos(currentPiece.pos.col, currentPiece.pos.row);
+      }
+      animPhase = "idle";
+      lastDropTime = performance.now();
+      return;
+    }
+
+    // マッチあり → 連鎖カウント増加
+    currentChainCount++;
+
+    // 消滅セルを記録してアニメ開始
+    const vanishCells: { col: number; row: number; salmonId: SalmonId }[] = [];
+    let removedCount = 0;
+
+    for (const group of matches) {
+      for (const { col, row } of group) {
+        const sid = grid[row][col];
+        if (sid) {
+          vanishCells.push({ col, row, salmonId: sid });
+        }
+      }
+      removedCount += group.reduce((n, { col, row }) => n + (grid[row][col] ? 1 : 0), 0);
+    }
+
+    // スコア加算
+    for (const group of matches) {
+      const count = group.length;
+      const scoreAdd = getBaseScore(count) * getChainMultiplier(currentChainCount);
+      setScore({
+        score: score.score + scoreAdd,
+        chainCount: score.chainCount + 1,
+        maxChain: Math.max(score.maxChain, currentChainCount),
+      });
+    }
+
+    // 消滅アニメ登録
+    addVanishingCells(vanishCells);
+    pendingParticles = vanishCells;
+
+    // 連鎖テキスト表示
+    showChainText(currentChainCount);
+
+    // グリッドから消去（描画は vanishingCells が担当）
+    removeMatches(grid, matches);
+
+    animPhase = "vanishing";
+  }
+
+  /** 重力落下をアニメーション付きで実行 */
+  function startGravityAnimation(): void {
+    // 落下前の状態を記録
+    const fallCells: { col: number; fromRow: number; toRow: number; salmonId: SalmonId }[] = [];
+
+    for (let col = 0; col < GRID_COLS; col++) {
+      // 各列で下から詰める
+      let writeRow = GRID_ROWS - 1;
+      for (let row = GRID_ROWS - 1; row >= 0; row--) {
+        if (grid[row][col] !== null) {
+          if (row !== writeRow) {
+            fallCells.push({
+              col,
+              fromRow: row,
+              toRow: writeRow,
+              salmonId: grid[row][col]!,
+            });
+          }
+          writeRow--;
+        }
+      }
+    }
+
+    // グリッドに重力適用
+    applyGravity(grid);
+
+    if (fallCells.length > 0) {
+      addFallingCells(fallCells);
+      animPhase = "falling";
+    } else {
+      // 落下なし → すぐに次のチェック
+      animPhase = "checking";
+    }
+  }
+
+  /** ピースをグリッドに固定 → 連鎖チェック開始 */
   function lockPiece(): void {
     if (!currentPiece) return;
     setCell(grid, currentPiece.pos.col, currentPiece.pos.row, currentPiece.main);
     const sub = getSubPos(currentPiece);
     setCell(grid, sub.col, sub.row, currentPiece.sub);
+    currentPiece = null;
 
-    // 連鎖処理
-    const result = resolveChains(grid);
-    if (result.chainCount > 0) {
-      setScore({
-        score: score.score + result.totalScore,
-        chainCount: score.chainCount + result.chainCount,
-        maxChain: Math.max(score.maxChain, result.chainCount),
-      });
-      onChain?.(result.chainCount);
-    }
-
-    // ゲームオーバー判定: 3列目（index 2）の最上行にサーモンがあるか
-    if (!isEmpty(grid, 2, 0) || !isEmpty(grid, 3, 0)) {
-      setState("gameover");
-      return;
-    }
-
-    // 次のピースを出す
-    currentPiece = nextPiece;
-    nextPiece = spawnPiece(activeSalmonIds);
+    // まず重力を適用してから連鎖チェック
+    currentChainCount = 0;
+    startGravityAnimation();
   }
 
   /** ゲームループ */
   function gameLoop(timestamp: number): void {
-    if (state !== "playing") {
+    if (state === "gameover") {
       renderFrame();
-      if (state !== "gameover") {
-        animationId = requestAnimationFrame(gameLoop);
-      } else {
-        renderFrame();
-      }
       return;
     }
 
-    // 速度アップ
-    if (difficulty && timestamp - lastSpeedUpTime >= difficulty.speedUpInterval) {
-      dropInterval = Math.max(100, dropInterval * difficulty.speedUpRate);
-      lastSpeedUpTime = timestamp;
+    if (state === "paused") {
+      renderFrame();
+      animationId = requestAnimationFrame(gameLoop);
+      return;
     }
 
-    // 自動落下
-    if (timestamp - lastDropTime >= dropInterval) {
-      if (currentPiece) {
-        if (!dropOne(grid, currentPiece)) {
-          lockPiece();
-        }
+    if (state === "playing") {
+      switch (animPhase) {
+        case "idle":
+          // 通常操作: 自動落下
+          if (difficulty && timestamp - lastSpeedUpTime >= difficulty.speedUpInterval) {
+            dropInterval = Math.max(100, dropInterval * difficulty.speedUpRate);
+            lastSpeedUpTime = timestamp;
+          }
+          if (timestamp - lastDropTime >= dropInterval) {
+            if (currentPiece) {
+              if (!dropOne(grid, currentPiece)) {
+                lockPiece();
+              }
+            }
+            lastDropTime = timestamp;
+          }
+          break;
+
+        case "vanishing":
+          // 消滅アニメ完了を待つ
+          if (!hasVanishingCells()) {
+            // パーティクル生成（消滅完了後に弾ける）
+            for (const cell of pendingParticles) {
+              spawnParticles(cell.col, cell.row, cell.salmonId);
+            }
+            pendingParticles = [];
+            startGravityAnimation();
+          }
+          break;
+
+        case "falling":
+          // 落下アニメ完了を待つ
+          if (!hasFallingCells()) {
+            animPhase = "checking";
+          }
+          break;
+
+        case "checking":
+          // 次の連鎖チェック
+          checkAndStartChain();
+          break;
       }
-      lastDropTime = timestamp;
     }
 
     renderFrame();
@@ -133,11 +269,15 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       score = { score: 0, chainCount: 0, maxChain: 0 };
       dropInterval = difficulty.initialSpeed;
       lastDropTime = performance.now();
-      gameStartTime = performance.now();
       lastSpeedUpTime = performance.now();
+      animPhase = "idle";
+      currentChainCount = 0;
 
       currentPiece = spawnPiece(activeSalmonIds);
       nextPiece = spawnPiece(activeSalmonIds);
+      if (currentPiece) {
+        resetSmoothPos(currentPiece.pos.col, currentPiece.pos.row);
+      }
 
       setState("playing");
       onScoreChange?.(score);
@@ -162,11 +302,14 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       currentPiece = null;
       nextPiece = null;
       score = { score: 0, chainCount: 0, maxChain: 0 };
+      animPhase = "idle";
+      currentChainCount = 0;
       setState("title");
     },
 
     handleInput(action: InputAction) {
-      if (state !== "playing" || !currentPiece) return;
+      // アニメ中は操作無効
+      if (state !== "playing" || !currentPiece || animPhase !== "idle") return;
 
       switch (action) {
         case "left":

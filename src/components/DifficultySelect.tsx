@@ -10,7 +10,7 @@ interface DifficultySelectProps {
 
 export default function DifficultySelect({ onSelect, onBack }: DifficultySelectProps) {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#0D3B66] to-[#1B4F72] text-white p-4">
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-[#FFF0EC] to-[#FFE0D6] text-[#3D2C2C] p-4">
       <h2 className="text-3xl font-bold mb-8">難易度を選択</h2>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl w-full">
@@ -34,7 +34,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
                 <span className="text-2xl">{diff.icon}</span>
                 <span className="text-xl font-bold">{diff.name}</span>
               </div>
-              <p className="text-sm text-blue-200 mb-2">{diff.salmonCount}種類のサーモン</p>
+              <p className="text-sm text-[#8B6F6F] mb-2">{diff.salmonCount}種類のサーモン</p>
               <div className="flex flex-wrap gap-1 mb-3">
                 {salmons.map((s) => (
                   <img
@@ -45,7 +45,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
                   />
                 ))}
               </div>
-              <p className="text-xs text-blue-300">
+              <p className="text-xs text-[#A08080]">
                 ハイスコア: {Number(highScore).toLocaleString()}
               </p>
             </button>
@@ -55,7 +55,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
 
       <button
         onClick={onBack}
-        className="mt-8 px-6 py-2 text-blue-300 hover:text-white transition-colors"
+        className="mt-8 px-6 py-2 text-[#A08080] hover:text-white transition-colors"
       >
         ← 戻る
       </button>
