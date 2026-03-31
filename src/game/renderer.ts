@@ -527,4 +527,12 @@ export function render(
   drawChainTexts(ctx);
 }
 
+/** ゲームリセット時に全アニメーション状態をクリア */
+export function clearAllAnimations(): void {
+  particles.length = 0;
+  chainTexts.length = 0;
+  vanishingCells.length = 0;
+  fallingCells.length = 0;
+}
+
 export { BOARD_WIDTH, BOARD_HEIGHT };

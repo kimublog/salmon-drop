@@ -11,7 +11,7 @@ import {
   render, preloadImages, spawnParticles, showChainText,
   addVanishingCells, hasVanishingCells,
   addFallingCells, hasFallingCells,
-  resetSmoothPos,
+  resetSmoothPos, clearAllAnimations,
   BOARD_WIDTH, BOARD_HEIGHT,
 } from "./renderer";
 
@@ -123,16 +123,16 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       removedCount += group.reduce((n, { col, row }) => n + (grid[row][col] ? 1 : 0), 0);
     }
 
-    // スコア加算
+    // スコア加算（全グループ分をまとめて1回のsetScore）
+    let totalScoreAdd = 0;
     for (const group of matches) {
-      const count = group.length;
-      const scoreAdd = getBaseScore(count) * getChainMultiplier(currentChainCount);
-      setScore({
-        score: score.score + scoreAdd,
-        chainCount: score.chainCount + 1,
-        maxChain: Math.max(score.maxChain, currentChainCount),
-      });
+      totalScoreAdd += getBaseScore(group.length) * getChainMultiplier(currentChainCount);
     }
+    setScore({
+      score: score.score + totalScoreAdd,
+      chainCount: score.chainCount + 1,
+      maxChain: Math.max(score.maxChain, currentChainCount),
+    });
 
     // 消滅アニメ登録
     addVanishingCells(vanishCells);
@@ -270,6 +270,8 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       difficulty = DIFFICULTIES.find((d) => d.id === difficultyId) || DIFFICULTIES[1];
       activeSalmonIds = SALMON_TYPES.slice(0, difficulty.salmonCount).map((s) => s.id);
 
+      cancelAnimationFrame(animationId);
+      clearAllAnimations();
       grid = createGrid();
       score = { score: 0, chainCount: 0, maxChain: 0 };
       dropInterval = difficulty.initialSpeed;
@@ -277,6 +279,7 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       lastSpeedUpTime = performance.now();
       animPhase = "idle";
       currentChainCount = 0;
+      pendingParticles = [];
 
       currentPiece = spawnPiece(activeSalmonIds);
       nextPiece = spawnPiece(activeSalmonIds);
@@ -303,12 +306,14 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
 
     reset() {
       cancelAnimationFrame(animationId);
+      clearAllAnimations();
       grid = createGrid();
       currentPiece = null;
       nextPiece = null;
       score = { score: 0, chainCount: 0, maxChain: 0 };
       animPhase = "idle";
       currentChainCount = 0;
+      pendingParticles = [];
       setState("title");
     },
 

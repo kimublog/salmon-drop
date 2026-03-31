@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useGame } from "@/hooks/useGame";
 import { DIFFICULTIES } from "@/constants/difficulties";
 import TitleScreen from "@/components/TitleScreen";
@@ -25,12 +25,24 @@ export default function Home() {
 
   const [screen, setScreen] = useState<"title" | "select" | "game" | "result">("title");
   const [selectedDifficulty, setSelectedDifficulty] = useState("normal");
+  const gameOverTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // ゲームオーバー検知
-  if (gameState === "gameover" && screen === "game") {
-    // 少し遅延してリザルト画面へ
-    setTimeout(() => setScreen("result"), 500);
-  }
+  // ゲームオーバー検知（useEffectで1回だけ発火）
+  useEffect(() => {
+    if (gameState === "gameover" && screen === "game") {
+      if (gameOverTimerRef.current) return; // 既にタイマーが走っている
+      gameOverTimerRef.current = setTimeout(() => {
+        setScreen("result");
+        gameOverTimerRef.current = null;
+      }, 500);
+    }
+    return () => {
+      if (gameOverTimerRef.current && gameState !== "gameover") {
+        clearTimeout(gameOverTimerRef.current);
+        gameOverTimerRef.current = null;
+      }
+    };
+  }, [gameState, screen]);
 
   // ローディング
   if (!imagesReady) {
@@ -43,7 +55,7 @@ export default function Home() {
             style={{ width: `${loadProgress}%` }}
           />
         </div>
-        <p className="text-sm mt-2 text-blue-300">{loadProgress}%</p>
+        <p className="text-sm mt-2 text-[#A08080]">{loadProgress}%</p>
       </div>
     );
   }

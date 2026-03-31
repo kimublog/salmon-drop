@@ -74,11 +74,12 @@ export default function GameBoard({
             ref={canvasRef}
             width={BOARD_WIDTH}
             height={BOARD_HEIGHT}
-            className="rounded-xl shadow-2xl border-2 border-[#E8C4B8]/50 max-w-[90vw] max-h-[55dvh] lg:max-h-[80vh]"
+            className="rounded-xl shadow-2xl border-2 border-[#E8C4B8]/50"
             style={{
-              width: BOARD_WIDTH,
-              height: BOARD_HEIGHT,
-              objectFit: "contain",
+              width: Math.min(BOARD_WIDTH, window?.innerWidth ? window.innerWidth * 0.9 : BOARD_WIDTH),
+              height: "auto",
+              aspectRatio: `${BOARD_WIDTH} / ${BOARD_HEIGHT}`,
+              maxHeight: "55dvh",
             }}
           />
 
