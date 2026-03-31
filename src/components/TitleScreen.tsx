@@ -24,7 +24,7 @@ export default function TitleScreen({ onStart }: TitleScreenProps) {
       <div className="mt-8 bg-[#E8C4B8]/30 rounded-xl p-5 max-w-md w-full">
         <p className="text-center text-sm font-bold text-orange-300 mb-3">遊び方</p>
         <div className="text-sm text-[#8B6F6F] space-y-1 mb-4 px-2">
-          <p>同じ種類のサーモンを <span className="text-yellow-300 font-bold">4つ以上</span> つなげると消えます</p>
+          <p>同じ種類のサーモンを <span className="text-[#E74C3C] font-bold">4つ以上</span> つなげると消えます</p>
           <p>消した後に連鎖が起きると高得点！</p>
         </div>
 
