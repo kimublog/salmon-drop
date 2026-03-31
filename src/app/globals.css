@@ -1,33 +1,68 @@
 @import "tailwindcss";
 
-@keyframes bounce-slow {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
+/* ピチピチアニメーション（積み上がったサーモンの生きてる感） */
+@keyframes pichipichi {
+  0%, 100% { transform: rotate(-2deg) translateY(0px); }
+  15% { transform: rotate(3deg) translateY(-3px); }
+  30% { transform: rotate(-3deg) translateY(-1px); }
+  50% { transform: rotate(2deg) translateY(-4px); }
+  70% { transform: rotate(-2deg) translateY(-1px); }
+  85% { transform: rotate(3deg) translateY(-2px); }
 }
 
-@keyframes ping-once {
-  0% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.8; }
-  100% { transform: scale(1); opacity: 0; }
+/* タイトルのバウンス */
+@keyframes title-bounce {
+  0%, 100% { transform: translateY(0) rotate(-1deg); }
+  50% { transform: translateY(-18px) rotate(1deg); }
 }
 
-.animate-bounce-slow {
-  animation: bounce-slow 3s ease-in-out infinite;
+/* タイトル左サーモン */
+@keyframes title-salmon-left {
+  0%, 100% { transform: translateY(0) rotate(-5deg); }
+  30% { transform: translateY(-25px) rotate(10deg); }
+  60% { transform: translateY(-5px) rotate(-8deg); }
 }
 
-.animate-ping-once {
-  animation: ping-once 1.2s ease-out forwards;
+/* タイトル右サーモン */
+@keyframes title-salmon-right {
+  0%, 100% { transform: scaleX(-1) translateY(0) rotate(5deg); }
+  40% { transform: scaleX(-1) translateY(-20px) rotate(-8deg); }
+  70% { transform: scaleX(-1) translateY(-8px) rotate(12deg); }
 }
 
-.salmon-title {
-  background: linear-gradient(135deg, #FA8072, #E74C3C, #FF6347);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  text-shadow: none;
+/* パーフェクト時のフラッシュ */
+@keyframes flash {
+  0% { opacity: 0.6; }
+  100% { opacity: 0; }
+}
+
+/* NEW RECORD 点滅 */
+@keyframes new-record-pulse {
+  0% { transform: scale(1); text-shadow: 0 0 10px rgba(255,107,107,0.5); }
+  100% { transform: scale(1.08); text-shadow: 0 0 30px rgba(255,107,107,0.9); }
+}
+
+/* 海藻ゆらぎ */
+@keyframes seaweed-sway {
+  0%, 100% { transform: rotate(-10deg) scaleY(1); }
+  50% { transform: rotate(10deg) scaleY(1.05); }
+}
+
+/* 雲の流れ */
+@keyframes cloud-drift {
+  0% { transform: translateX(-20px); }
+  100% { transform: translateX(20px); }
+}
+
+/* 星の瞬き */
+@keyframes twinkle {
+  0%, 100% { opacity: 0.3; }
+  50% { opacity: 1; }
 }
 
 body {
   font-family: "Noto Sans JP", "游ゴシック", "Yu Gothic", sans-serif;
   overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
 }

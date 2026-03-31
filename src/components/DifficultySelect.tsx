@@ -39,7 +39,7 @@ export default function DifficultySelect({ onSelect, onBack }: DifficultySelectP
                 {salmons.map((s) => (
                   <img
                     key={s.id}
-                    src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/images/salmon/${s.image}`}
+                    src={`${process.env.NEXT_PUBLIC_BASE_PATH || ""}/images/salmon/${encodeURIComponent(s.image)}`}
                     alt={s.name}
                     className="w-6 h-6 sm:w-8 sm:h-8 rounded object-cover"
                   />

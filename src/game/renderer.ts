@@ -322,9 +322,10 @@ export function preloadImages(onProgress?: (loaded: number, total: number) => vo
     const total = SALMON_TYPES.length;
     let loaded = 0;
     if (total === 0) { imagesLoaded = true; resolve(); return; }
-    for (const salmon of SALMON_TYPES) {
+
+    function loadOne(salmon: typeof SALMON_TYPES[number], retries: number = 2): void {
       const img = new Image();
-      img.src = `${BASE_PATH}/images/salmon/${salmon.image}`;
+      img.src = `${BASE_PATH}/images/salmon/${encodeURIComponent(salmon.image)}`;
       img.onload = () => {
         imageCache.set(salmon.id, img);
         loaded++;
@@ -332,10 +333,33 @@ export function preloadImages(onProgress?: (loaded: number, total: number) => vo
         if (loaded === total) { imagesLoaded = true; resolve(); }
       };
       img.onerror = () => {
-        loaded++;
-        onProgress?.(loaded, total);
-        if (loaded === total) { imagesLoaded = true; resolve(); }
+        if (retries > 0) {
+          // リトライ（エンコードなしのパスも試す）
+          const retryImg = new Image();
+          retryImg.src = `${BASE_PATH}/images/salmon/${salmon.image}`;
+          retryImg.onload = () => {
+            imageCache.set(salmon.id, retryImg);
+            loaded++;
+            onProgress?.(loaded, total);
+            if (loaded === total) { imagesLoaded = true; resolve(); }
+          };
+          retryImg.onerror = () => {
+            console.warn(`Failed to load: ${salmon.image}`);
+            loaded++;
+            onProgress?.(loaded, total);
+            if (loaded === total) { imagesLoaded = true; resolve(); }
+          };
+        } else {
+          console.warn(`Failed to load: ${salmon.image}`);
+          loaded++;
+          onProgress?.(loaded, total);
+          if (loaded === total) { imagesLoaded = true; resolve(); }
+        }
       };
+    }
+
+    for (const salmon of SALMON_TYPES) {
+      loadOne(salmon);
     }
   });
 }
@@ -413,12 +437,17 @@ function drawSalmonAt(
   if (img) {
     ctx.drawImage(img, px + padding, py + padding, size, size);
   } else {
+    // フォールバック: 枠線付き色付き四角
     const colors: Record<string, string> = {
-      atlantic: "#FA8072", king: "#FF6347", sockeye: "#DC143C", silver: "#C0C0C0",
+      atlantic: "#FA8072", king: "#FF6347", sockeye: "#DC143C", silver: "#A0A0A0",
       trout: "#FFA07A", chum: "#CD853F", pink: "#FFB6C1", cherry: "#FF69B4",
     };
-    ctx.fillStyle = colors[salmonId] || "#888";
+    const c = colors[salmonId] || "#888";
+    ctx.fillStyle = c;
     ctx.fillRect(px + padding, py + padding, size, size);
+    ctx.strokeStyle = "rgba(0,0,0,0.3)";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(px + padding, py + padding, size, size);
   }
   ctx.restore();
 }
