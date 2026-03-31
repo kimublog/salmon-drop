@@ -4,7 +4,7 @@ import { Difficulty } from "@/types/difficulty";
 import { SALMON_TYPES, GRID_COLS, GRID_ROWS } from "@/constants/salmonTypes";
 import { DIFFICULTIES } from "@/constants/difficulties";
 import { createGrid, setCell, applyGravity, isEmpty } from "./grid";
-import { spawnPiece, movePiece, rotatePiece, dropOne, hardDrop, getSubPos, getGhostPosition } from "./piece";
+import { spawnPiece, movePiece, rotatePiece, dropOne, hardDrop, getBlockPositions, getGhostPosition } from "./piece";
 import { findMatches, removeMatches } from "./collision";
 import { getBaseScore, getChainMultiplier } from "@/constants/scoring";
 import {
@@ -184,9 +184,13 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
   /** ピースをグリッドに固定 → 連鎖チェック開始 */
   function lockPiece(): void {
     if (!currentPiece) return;
-    setCell(grid, currentPiece.pos.col, currentPiece.pos.row, currentPiece.main);
-    const sub = getSubPos(currentPiece);
-    setCell(grid, sub.col, sub.row, currentPiece.sub);
+    const positions = getBlockPositions(currentPiece);
+    for (let i = 0; i < currentPiece.blocks.length; i++) {
+      const p = positions[i];
+      if (p.row >= 0) {
+        setCell(grid, p.col, p.row, currentPiece.blocks[i].salmonId);
+      }
+    }
     currentPiece = null;
 
     // まず重力を適用してから連鎖チェック

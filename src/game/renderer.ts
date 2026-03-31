@@ -1,7 +1,7 @@
 import { Grid, FallingPiece } from "@/types/game";
 import { SalmonId } from "@/types/salmon";
 import { SALMON_TYPES, GRID_COLS, GRID_ROWS, CELL_SIZE } from "@/constants/salmonTypes";
-import { getSubPos } from "./piece";
+import { getBlockPositions } from "./piece";
 
 const BOARD_WIDTH = GRID_COLS * CELL_SIZE;
 const BOARD_HEIGHT = GRID_ROWS * CELL_SIZE;
@@ -441,46 +441,39 @@ function drawGrid(ctx: CanvasRenderingContext2D, grid: Grid): void {
   }
 }
 
-/** 落下ピースをスムーズ描画 */
+/** 落下ピースをスムーズ描画（Nブロック対応） */
 function drawPieceSmooth(
   ctx: CanvasRenderingContext2D,
   piece: FallingPiece,
   smooth: SmoothPos,
   alpha: number = 1
 ): void {
-  const subOffset = getSubPos(piece);
-  const subRelCol = subOffset.col - piece.pos.col;
-  const subRelRow = subOffset.row - piece.pos.row;
-
-  const mainPx = smooth.displayCol * CELL_SIZE;
-  const mainPy = smooth.displayRow * CELL_SIZE;
-  drawSalmonAt(ctx, piece.main, mainPx, mainPy, alpha);
-
-  const subPx = (smooth.displayCol + subRelCol) * CELL_SIZE;
-  const subPy = (smooth.displayRow + subRelRow) * CELL_SIZE;
-  drawSalmonAt(ctx, piece.sub, subPx, subPy, alpha);
+  for (const block of piece.blocks) {
+    const px = (smooth.displayCol + block.dc) * CELL_SIZE;
+    const py = (smooth.displayRow + block.dr) * CELL_SIZE;
+    if (py + CELL_SIZE > 0) { // 画面上端より上は描画しない
+      drawSalmonAt(ctx, block.salmonId, px, py, alpha);
+    }
+  }
 }
 
-/** ゴーストピース描画 */
+/** ゴーストピース描画（Nブロック対応） */
 function drawGhostPiece(ctx: CanvasRenderingContext2D, piece: FallingPiece): void {
   const padding = 1;
   const size = CELL_SIZE - padding * 2;
-  const positions = [
-    piece.pos,
-    getSubPos(piece),
-  ];
+  const positions = getBlockPositions(piece);
   ctx.save();
   ctx.globalAlpha = 0.2;
   ctx.strokeStyle = "rgba(180,120,100,0.4)";
   ctx.lineWidth = 2;
   ctx.setLineDash([4, 4]);
-  for (const pos of positions) {
+  for (let i = 0; i < positions.length; i++) {
+    const pos = positions[i];
+    if (pos.row < 0) continue;
     const x = pos.col * CELL_SIZE + padding;
     const y = pos.row * CELL_SIZE + padding;
     ctx.strokeRect(x, y, size, size);
-    const img = imageCache.get(
-      pos === piece.pos ? piece.main : piece.sub
-    );
+    const img = imageCache.get(piece.blocks[i].salmonId);
     if (img) {
       ctx.drawImage(img, x, y, size, size);
     }

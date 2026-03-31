@@ -11,14 +11,22 @@ export interface Position {
   row: number;
 }
 
-/** 落下中の組ピース（メイン + サブ） */
+/** ピース内の1ブロック（アンカーからの相対位置） */
+export interface PieceBlock {
+  salmonId: SalmonId;
+  dc: number;
+  dr: number;
+}
+
+/** ピースの形状タイプ */
+export type PieceShape = "single" | "pair" | "triple_i" | "triple_l";
+
+/** 落下中の組ピース（1〜3ブロック） */
 export interface FallingPiece {
-  main: SalmonId;
-  sub: SalmonId;
-  /** メイン位置 */
+  blocks: PieceBlock[];
+  /** アンカー位置 */
   pos: Position;
-  /** サブの方向（0=上, 1=右, 2=下, 3=左） */
-  rotation: 0 | 1 | 2 | 3;
+  shape: PieceShape;
 }
 
 export interface GameScore {
