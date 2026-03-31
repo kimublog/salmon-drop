@@ -4,7 +4,7 @@ import { Difficulty } from "@/types/difficulty";
 import { SALMON_TYPES, GRID_COLS, GRID_ROWS } from "@/constants/salmonTypes";
 import { DIFFICULTIES } from "@/constants/difficulties";
 import { createGrid, setCell, applyGravity, isEmpty } from "./grid";
-import { spawnPiece, movePiece, rotatePiece, dropOne, hardDrop, getBlockPositions, getGhostPosition } from "./piece";
+import { spawnPiece, movePiece, rotatePiece, dropOne, hardDrop, getBlockPositions, getGhostPosition, isValidPosition } from "./piece";
 import { findMatches, removeMatches } from "./collision";
 import { getBaseScore, getChainMultiplier } from "@/constants/scoring";
 import {
@@ -88,15 +88,16 @@ export function createGameEngine(canvas: HTMLCanvasElement): GameEngine {
       }
       currentChainCount = 0;
 
-      // ゲームオーバー判定
-      if (!isEmpty(grid, 2, 0) || !isEmpty(grid, 3, 0)) {
+      // 次のピースを取得し、配置可能か判定
+      currentPiece = nextPiece;
+      nextPiece = spawnPiece(activeSalmonIds);
+
+      // ゲームオーバー判定: 次のピースがスポーン位置に置けない
+      if (currentPiece && !isValidPosition(grid, currentPiece)) {
+        currentPiece = null;
         setState("gameover");
         return;
       }
-
-      // 次のピース
-      currentPiece = nextPiece;
-      nextPiece = spawnPiece(activeSalmonIds);
       if (currentPiece) {
         resetSmoothPos(currentPiece.pos.col, currentPiece.pos.row);
       }

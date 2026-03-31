@@ -154,13 +154,3 @@ export function getGhostPosition(grid: Grid, piece: FallingPiece): FallingPiece 
   return ghost;
 }
 
-// 後方互換: 旧APIのgetSubPos（renderer等で使わなくなったが安全のため残す）
-export function getSubPos(piece: FallingPiece): Position {
-  if (piece.blocks.length >= 2) {
-    return {
-      col: piece.pos.col + piece.blocks[1].dc,
-      row: piece.pos.row + piece.blocks[1].dr,
-    };
-  }
-  return piece.pos;
-}
